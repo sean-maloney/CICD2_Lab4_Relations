@@ -12,9 +12,8 @@ ProjectCreate, ProjectRead,
 ProjectReadWithOwner, ProjectCreateForUser
 )
 
-#This code is used to demonstrate how to hook the fast API backend to SQLite 
-#it follows the CRUD endpoints for project, course and users allowing the information to get stored in SQLite
-#It has the models.py file for the databases tables, a schemas.py file to show the parameters and a main.py file where the functions are made and used.
+#This code is used to show how to connect the fast API backend to SQLite 
+#Uses crud endpoints
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -74,8 +73,6 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected: {e!s}")
 
-
-    # Convert ORM -> Pydantic explicitly (sometimes fixes silent 500s)
     return ProjectRead.model_validate(proj)
 
 #Put to update the projects info
@@ -97,7 +94,7 @@ def update_project(project_id: int, updated: ProjectCreate, db: Session = Depend
         raise HTTPException(status_code=409, detail="Project already exists or owner invalid")
     return project
 
-#patch to update the projects information for only 1 variable
+#patch to update the projects 
 @app.patch("/api/projects/{project_id}", response_model=ProjectRead)
 def patch_project(project_id: int, updated: ProjectUpdate, db: Session = Depends(get_db)):
     project = db.query(ProjectDB).filter(ProjectDB.project_id == project_id).first()
@@ -121,15 +118,15 @@ def patch_project(project_id: int, updated: ProjectUpdate, db: Session = Depends
 # LIST
 @app.get("/api/projects", response_model=list[ProjectRead])
 def list_projects(db: Session = Depends(get_db)):
-    stmt = select(ProjectDB).order_by(ProjectDB.project_id)  # not ProjectDB.id
+    stmt = select(ProjectDB).order_by(ProjectDB.project_id)
     return db.execute(stmt).scalars().all()
 
-# GET ONE (with owner)
+# GET project with project id
 @app.get("/api/projects/{project_id}", response_model=ProjectReadWithOwner)
 def get_project_with_owner(project_id: int, db: Session = Depends(get_db)):
     stmt = (
         select(ProjectDB)
-        .where(ProjectDB.project_id == project_id)           # not ProjectDB.id
+        .where(ProjectDB.project_id == project_id)
         .options(selectinload(ProjectDB.owner))
     )
     proj = db.execute(stmt).scalar_one_or_none()
@@ -146,7 +143,6 @@ def get_user_projects(user_id: int, db: Session = Depends(get_db)):
   result = db.execute(stmt)
   rows = result.scalars().all()
   return rows
-  #return db.execute(stmt).scalars().all()
 
 @app.post("/api/users/{user_id}/projects", response_model=ProjectRead, status_code=201)
 def create_user_project(user_id: int, project: ProjectCreateForUser, db: Session =
@@ -169,11 +165,9 @@ Depends(get_db)):
 @app.get("/api/users", response_model=list[UserRead])
 def list_users(db: Session = Depends(get_db)):
   stmt = select(UserDB).order_by(UserDB.id)
-  #Useful for debugging
   result = db.execute(stmt)
   users = result.scalars().all()
   return users
-  #return list(db.execute(stmt).scalars())
 
 @app.get("/api/users/{user_id}", response_model=UserRead)
 def get_user(user_id: int, db: Session = Depends(get_db)):
@@ -194,7 +188,7 @@ def add_user(payload: UserCreate, db: Session = Depends(get_db)):
     raise HTTPException(status_code=409, detail="User already exists")
   return user
 
-#Updates users and shows an error if user already exists
+#Updates users
 @app.put("/api/users/{student_id}", response_model=UserRead)
 def update_user(student_id: str, updated_user: UserCreate, db: Session = Depends(get_db)):
     user = db.query(UserDB).filter(UserDB.student_id == student_id).first()
@@ -215,7 +209,7 @@ def update_user(student_id: str, updated_user: UserCreate, db: Session = Depends
       raise HTTPException(status_code=409, detail="User already exists")
     return user
 
-#PATCH for users this patch only updates when one variable is passed
+#PATCH for users
 @app.patch("/api/users/{student_id}", response_model=UserRead)
 def update_user(student_id: str, updated_user: UserUpdate, db: Session = Depends(get_db)):
     user = db.query(UserDB).filter(UserDB.student_id == student_id).first()
@@ -239,7 +233,7 @@ def update_user(student_id: str, updated_user: UserUpdate, db: Session = Depends
 
 
 
-# DELETE a user (triggers ORM cascade -> deletes their projects too)
+# DELETE a user
 @app.delete("/api/users/{user_id}", status_code=204)
 def delete_user(user_id: int, db: Session = Depends(get_db)) -> Response:
   user = db.get(UserDB, user_id)
