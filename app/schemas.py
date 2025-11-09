@@ -12,14 +12,14 @@ DescStr = Annotated[str, StringConstraints(min_length=0, max_length=2000)]
 AgeInt = Annotated[int, Ge(0), Le(150)]
 CreditsInt = Annotated[int, Ge(1), Le(120)]
 
-# ---------- Users ----------
+#Users
 class UserCreate(BaseModel):
     name: NameStr
     email: EmailStr
     age: AgeInt
     student_id: StudentIdStr
 
-#Added as needed to make patch endpoint work 
+#make patch endpoint work 
 class UserUpdate(BaseModel):
     name: Optional[NameStr] = None
     email: Optional[EmailStr] = None
@@ -34,7 +34,7 @@ class UserRead(BaseModel):
     age: AgeInt
     student_id: StudentIdStr
 
-# Optionally return users with their projects
+#return users and projects
 class ProjectRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     project_id: int
@@ -45,14 +45,14 @@ class ProjectRead(BaseModel):
 class UserReadWithProjects(UserRead):
     projects: List[ProjectRead] = []
 
-# ---------- Projects ----------
-# Flat route: POST /api/projects (owner_id in body)
+#Projects
+# Flat route for POST
 class ProjectCreate(BaseModel):
     name: ProjectNameStr
     description: Optional[DescStr] = None
     owner_id: int
 
-# Nested route: POST /api/users/{user_id}/projects (owner implied by path)
+# Nested route for POST
 class ProjectCreateForUser(BaseModel):
     name: ProjectNameStr
     description: Optional[DescStr] = None

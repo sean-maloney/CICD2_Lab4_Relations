@@ -7,6 +7,7 @@ from typing import Optional
 class Base(DeclarativeBase):
     pass
 
+#User table
 class UserDB(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -16,6 +17,7 @@ class UserDB(Base):
     student_id: Mapped[str] = mapped_column(unique=True, nullable=False)
     projects: Mapped[list["ProjectDB"]] = relationship(back_populates="owner", cascade="all,delete-orphan")
 
+#Project table
 class ProjectDB(Base):
     __tablename__ = "projects"
     project_id: Mapped[int] = mapped_column(primary_key=True)
@@ -25,7 +27,7 @@ class ProjectDB(Base):
     owner: Mapped["UserDB"] = relationship(back_populates="projects")
 
 
-# B) Independent table
+#Course table
 class CourseDB(Base):
     __tablename__ = "courses"
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -22,7 +22,6 @@ def client():
       db.close()
   app.dependency_overrides[get_db] = override_get_db
   with TestClient(app) as c:
-# hand the client to the test
     yield c
 
 def user_payload(name="User",email="user@atu.ie", age=20, sid="S9000001"):
@@ -30,17 +29,14 @@ def user_payload(name="User",email="user@atu.ie", age=20, sid="S9000001"):
 
 
 #USER PUT
-#Put for student id and takes full user creat body
 
 def test_update_user_ok(client):
     sid = "S9000101"
     email = f"u_put_old_{sid.lower()}@atu.ie"
 
-    #create original user
     r_create = client.post("/api/users", json=user_payload(name="OldUser", email=email, age=20, sid=sid))
     assert r_create.status_code == 201
 
-    #update keeping then unique fields like email and sid the same######################################
     r = client.put(f"/api/users/{sid}",json={"name": "NewUser", "email": email, "age":21,"student_id":sid},)
     assert r.status_code == 200
     data = r.json()
@@ -51,7 +47,7 @@ def test_update_user_ok(client):
 
 
 #user patch
-#patch is keyed by student_id and allows partial fields.
+#patch is done with student_id
 
 def test_patch_user_ok(client):
     sid = "S9000102"
@@ -71,10 +67,9 @@ def test_patch_user_ok(client):
 
 
 #project put
-#for projects we must creat an owner user first and use their returned id as owner_id
+#user must be created frirst before we can update as owner id is needed
 
 def test_update_project_ok(client):
-    # owner
     owner_sid = "S9000201"
     owner_email = f"owner_put_{owner_sid.lower()}@atu.ie"
     u = client.post("/api/users", json=user_payload(name="owner",email=owner_email,age=22,sid=owner_sid))
@@ -95,22 +90,19 @@ def test_update_project_ok(client):
     assert data ["owner_id"] == owner_id
 
 #Project Patch
-#partial update of a projects info
+#partial update of a projects desc, or name
 
 def test_patch_project_ok(client):
-    # owner
     owner_sid = "S9000202"
     owner_email = f"owner_put_{owner_sid.lower()}@atu.ie"
     u = client.post("/api/users", json=user_payload(name="Owner2",email=owner_email,age=23,sid=owner_sid))
     assert u.status_code == 201
     owner_id = u.json()["id"]
 
-    # create a project
     p_create = client.post("/api/projects",json={"name":"PatchProj","description":"init","owner_id":owner_id},)
     assert p_create.status_code == 201
     pid = p_create.json()["project_id"]
 
-    #partial update 
     r = client.patch(f"/api/projects/{pid}", json={"description": "updated desc"})
     assert r.status_code == 200
     data = r.json()
